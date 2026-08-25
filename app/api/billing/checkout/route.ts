@@ -33,7 +33,10 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         reason: `Fluxtok ${info.name}`,
         external_reference: user.companyId,
-        payer_email: user.email,
+        payer_email:
+  process.env.MERCADOPAGO_MODE === "test"
+    ? process.env.MERCADOPAGO_TEST_PAYER_EMAIL || "test@testuser.com"
+    : user.email,
         auto_recurring: { frequency: 1, frequency_type: "months", transaction_amount: info.price, currency_id: "BRL" },
         back_url: appUrl("/billing?return=1").toString(),
         status: "pending",
