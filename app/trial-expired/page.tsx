@@ -1,0 +1,2 @@
+import { Brand } from "@/components/brand";
+export default function TrialExpired(){return <main className="auth-shell auth-shell-brand"><section className="auth-card stack"><Brand/><div><h1 className="auth-title">Seu período de teste terminou</h1><p className="muted">Seus dados continuam salvos. Escolha um plano para continuar usando o Fluxtok.</p></div><a className="btn btn-primary" href="/billing">Ver planos</a></section></main>}

@@ -1,0 +1,2 @@
+import { Brand } from "@/components/brand";
+export default function Disabled(){return <main className="auth-shell auth-shell-brand"><section className="auth-card stack"><Brand/><div><h1 className="auth-title">Conta indisponível</h1><p className="muted">Esta empresa está desativada. Entre em contato com o responsável pelo Fluxtok.</p></div><form action="/api/auth/logout" method="post"><button className="btn btn-primary">Sair</button></form></section></main>}
