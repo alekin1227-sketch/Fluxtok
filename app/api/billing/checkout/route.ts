@@ -14,43 +14,118 @@ const schema = z.object({
   billingConsent: z.literal("yes"),
 });
 
+function mercadoPagoMode() {
+  return process.env.MERCADOPAGO_MODE?.trim().toLowerCase() === "test" ? "test" : "production";
+}
+
+function mercadoPagoPayerEmail(realEmail: string) {
+  if (mercadoPagoMode() !== "test") return realEmail;
+
+  const configured = process.env.MERCADOPAGO_TEST_PAYER_EMAIL?.trim().toLowerCase();
+  if (!configured) {
+    throw new Error(
+      "MERCADOPAGO_TEST_PAYER_EMAIL ausente. Em teste de Assinaturas, use o e-mail EXATO da conta Comprador de teste do mesmo país/site do Vendedor de teste."
+    );
+  }
+
+  return configured;
+}
+
+function emailDomain(email: string) {
+  const at = email.lastIndexOf("@");
+  return at >= 0 ? `***@${email.slice(at + 1)}` : "***";
+}
+
 export async function POST(req: NextRequest) {
   assertSameOrigin(req);
   const user = await requireCompanyAdminIdentity();
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN?.trim();
   if (!token) return NextResponse.redirect(appUrl("/billing?error=not-configured"), 303);
+
   const f = await req.formData();
   const parsed = schema.safeParse(Object.fromEntries(f));
   if (!parsed.success) return NextResponse.redirect(appUrl("/billing?error=consent"), 303);
+
   const plan = parsed.data.plan;
   const info = PLAN_INFO[plan];
+  const mode = mercadoPagoMode();
 
   try {
-    await saveAcceptances({ tx: prisma, companyId: user.companyId, userId: user.id, documents: [LegalDocument.BILLING_RECURRING], headers: req.headers });
+    const payerEmail = mercadoPagoPayerEmail(user.email);
+
+    await saveAcceptances({
+      tx: prisma,
+      companyId: user.companyId,
+      userId: user.id,
+      documents: [LegalDocument.BILLING_RECURRING],
+      headers: req.headers,
+    });
+
     const res = await fetch("https://api.mercadopago.com/preapproval", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         reason: `Fluxtok ${info.name}`,
         external_reference: user.companyId,
-        payer_email:
-  process.env.MERCADOPAGO_MODE === "test"
-    ? process.env.MERCADOPAGO_TEST_PAYER_EMAIL || "test@testuser.com"
-    : user.email,
-        auto_recurring: { frequency: 1, frequency_type: "months", transaction_amount: info.price, currency_id: "BRL" },
+        payer_email: payerEmail,
+        auto_recurring: {
+          frequency: 1,
+          frequency_type: "months",
+          transaction_amount: info.price,
+          currency_id: "BRL",
+        },
         back_url: appUrl("/billing?return=1").toString(),
         status: "pending",
       }),
     });
+
     const json = await res.json();
-    if (!res.ok || !json.id || !json.init_point) throw new Error(json.message || "Mercado Pago não retornou checkout.");
+    if (!res.ok || !json.id || !json.init_point) {
+      console.error("mercadopago preapproval", {
+        mode,
+        status: res.status,
+        payer: emailDomain(payerEmail),
+        message: json?.message,
+        error: json?.error,
+        cause: json?.cause,
+        hint:
+          json?.message === "Payer is associated with a different site"
+            ? "Confirme que Vendedor de teste e Comprador de teste são Brasil/MLB e use o Access Token de PRODUÇÃO da aplicação criada dentro da conta Vendedor de teste."
+            : undefined,
+      });
+      throw new Error(json.message || "Mercado Pago não retornou checkout.");
+    }
+
     await prisma.subscription.upsert({
       where: { companyId: user.companyId },
-      create: { companyId: user.companyId, status: "TRIALING", plan, trialEndsAt: new Date(Date.now() + 7 * 86400000), amount: info.price, externalSubscriptionId: String(json.id) },
-      update: { plan, amount: info.price, externalSubscriptionId: String(json.id), provider: "mercadopago" },
+      create: {
+        companyId: user.companyId,
+        status: "TRIALING",
+        plan,
+        trialEndsAt: new Date(Date.now() + 7 * 86400000),
+        amount: info.price,
+        externalSubscriptionId: String(json.id),
+      },
+      update: {
+        plan,
+        amount: info.price,
+        externalSubscriptionId: String(json.id),
+        provider: "mercadopago",
+      },
     });
-    await audit({ companyId: user.companyId, userId: user.id, action: "BILLING_CHECKOUT_CREATED", entity: "subscription", metadata: { plan, amount: info.price } });
-    return NextResponse.redirect(json.init_point, 303);
+
+    await audit({
+      companyId: user.companyId,
+      userId: user.id,
+      action: "BILLING_CHECKOUT_CREATED",
+      entity: "subscription",
+      metadata: { plan, amount: info.price, mercadoPagoMode: mode },
+    });
+
+    return NextResponse.redirect(String(json.init_point), 303);
   } catch (error) {
     console.error("billing checkout", error);
     return NextResponse.redirect(appUrl("/billing?error=checkout"), 303);
