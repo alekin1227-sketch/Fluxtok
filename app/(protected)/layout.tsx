@@ -1,4 +1,4 @@
-import { requireCompanyUser } from "@/lib/auth";
+import { requireCompanyIdentity } from "@/lib/auth";
 import { Brand } from "@/components/brand";
 import { UserRole } from "@prisma/client";
 
@@ -12,11 +12,12 @@ const nav = [
   ["/products", "Produtos", "◇"],
   ["/integrations/tiktok", "TikTok Shop", "♪"],
   ["/team", "Equipe", "＋"],
+  ["/support", "Suporte", "?"],
   ["/settings", "Configurações", "⚙"],
 ];
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
-  const user = await requireCompanyUser();
+  const user = await requireCompanyIdentity();
   const sub = user.company.subscription;
   const daysLeft = sub?.status === "TRIALING" ? Math.max(0, Math.ceil((sub.trialEndsAt.getTime() - Date.now()) / 86400000)) : null;
   return <div className="app-shell">

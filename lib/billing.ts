@@ -6,13 +6,13 @@ export const PLAN_INFO: Record<BillingPlan, { name: string; price: number; descr
     name: "Essencial",
     price: Number(process.env.FLUXTOK_STARTER_PRICE || "49.90"),
     description: "Para lojas iniciando a operação com creators.",
-    features: ["Creators e produtos", "Amostras e pendências", "Campanhas", "TikTok Shop", "Até 3 usuários"],
+    features: ["Creators, produtos e amostras", "FluxRadar e FluxScore", "Campanhas e pendências", "TikTok Shop", "Suporte interno", "Até 3 usuários"],
   },
   PRO: {
     name: "Pro",
     price: Number(process.env.FLUXTOK_PRO_PRICE || "79.90"),
     description: "Para operações que precisam de mais equipe e acompanhamento.",
-    features: ["Tudo do Essencial", "Usuários adicionais", "Indicadores avançados", "Histórico e auditoria", "Prioridade em novos recursos"],
+    features: ["Tudo do Essencial", "Usuários adicionais", "Indicadores e auditoria", "Suporte prioritário", "Prioridade em novos recursos"],
   },
 };
 

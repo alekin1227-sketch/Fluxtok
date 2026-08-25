@@ -66,6 +66,26 @@ enum TikTokConnectionStatus {
   DISCONNECTED
 }
 
+enum SupportTicketStatus {
+  OPEN
+  WAITING_SUPPORT
+  WAITING_CUSTOMER
+  CLOSED
+}
+
+enum SupportSender {
+  CUSTOMER
+  SUPPORT
+}
+
+enum LegalDocument {
+  TERMS
+  PRIVACY
+  TRIAL
+  DATA_PROCESSING
+  BILLING_RECURRING
+}
+
 model Company {
   id                  String   @id @default(cuid())
   name                String
@@ -87,6 +107,8 @@ model Company {
   tiktokConnection TikTokConnection?
   tiktokOAuthStates TikTokOAuthState[]
   auditLogs         AuditLog[]
+  supportTickets    SupportTicket[]
+  legalAcceptances  LegalAcceptance[]
 
   @@map("companies")
 }
@@ -107,6 +129,9 @@ model User {
   sessions     Session[]
   resetTokens  PasswordResetToken[]
   tiktokOAuthStates TikTokOAuthState[]
+  supportTickets     SupportTicket[]
+  supportMessages    SupportMessage[]
+  legalAcceptances   LegalAcceptance[]
 
   @@index([companyId])
   @@index([role])
@@ -350,6 +375,73 @@ model AuditLog {
   @@index([companyId, createdAt])
   @@index([userId, createdAt])
   @@map("audit_logs")
+}
+
+
+model PlatformSetting {
+  id                String   @id @default("global")
+  supportEmail      String?
+  notificationEmail String?
+  supportName       String   @default("Equipe Fluxtok")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("platform_settings")
+}
+
+model SupportTicket {
+  id            String              @id @default(cuid())
+  companyId     String
+  createdById   String
+  subject       String
+  category      String              @default("Geral")
+  status        SupportTicketStatus @default(OPEN)
+  lastMessageAt DateTime            @default(now())
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  company       Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy     User                @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  messages      SupportMessage[]
+
+  @@index([companyId, status])
+  @@index([status, lastMessageAt])
+  @@index([createdById])
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id           String        @id @default(cuid())
+  ticketId     String
+  authorUserId String?
+  sender       SupportSender
+  message      String        @db.Text
+  createdAt    DateTime      @default(now())
+
+  ticket       SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorUser   User?         @relation(fields: [authorUserId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId, createdAt])
+  @@index([authorUserId])
+  @@map("support_messages")
+}
+
+model LegalAcceptance {
+  id        String        @id @default(cuid())
+  companyId String
+  userId    String
+  document  LegalDocument
+  version   String
+  ipHash    String?
+  userAgent String?       @db.Text
+  acceptedAt DateTime     @default(now())
+
+  company   Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, acceptedAt])
+  @@index([userId, document, acceptedAt])
+  @@map("legal_acceptances")
 }
 
 model Session {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { LegalDocument } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { assertSameOrigin } from "@/lib/csrf";
@@ -7,6 +8,9 @@ import { appUrl } from "@/lib/app-url";
 import { createSession } from "@/lib/auth";
 import { uniqueCompanySlug } from "@/lib/slug";
 import { audit } from "@/lib/audit";
+import { saveAcceptances } from "@/lib/legal";
+import { getPlatformSettings } from "@/lib/platform-settings";
+import { sendPlatformNotification } from "@/lib/mail";
 
 const schema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -14,6 +18,8 @@ const schema = z.object({
   email: z.string().trim().toLowerCase().email(),
   password: z.string().min(12).max(200),
   terms: z.literal("yes"),
+  trialConsent: z.literal("yes"),
+  dataConsent: z.literal("yes"),
 });
 
 export async function POST(req: NextRequest) {
@@ -37,14 +43,23 @@ export async function POST(req: NextRequest) {
           slug,
           settings: { create: {} },
           subscription: { create: { status: "TRIALING", plan: "STARTER", trialStartsAt: now, trialEndsAt } },
-          trial: { create: { trialEndsAt, note: "Criado automaticamente pela V3" } },
+          trial: { create: { trialEndsAt, note: "Criado automaticamente pela V4" } },
         },
       });
       const user = await tx.user.create({ data: { companyId: company.id, name, email, passwordHash, role: "COMPANY_ADMIN" } });
+      await saveAcceptances({
+        tx,
+        companyId: company.id,
+        userId: user.id,
+        documents: [LegalDocument.TERMS, LegalDocument.PRIVACY, LegalDocument.TRIAL, LegalDocument.DATA_PROCESSING],
+        headers: req.headers,
+      });
       return { company, user };
     });
     await createSession(result.user.id);
-    await audit({ companyId: result.company.id, userId: result.user.id, action: "ACCOUNT_REGISTERED", entity: "company", entityId: result.company.id });
+    await audit({ companyId: result.company.id, userId: result.user.id, action: "ACCOUNT_REGISTERED", entity: "company", entityId: result.company.id, metadata: { legalVersion: "2026-08-25-v1" } });
+    const platform = await getPlatformSettings();
+    if (platform.notificationEmail) await sendPlatformNotification({ to: platform.notificationEmail, subject: "[Fluxtok] Nova conta criada", text: `Nova empresa: ${result.company.name}\nResponsável: ${result.user.name}\nE-mail: ${result.user.email}\nTeste: 7 dias` }).catch((e) => console.error("signup notification", e));
     return NextResponse.redirect(appUrl("/onboarding"), 303);
   } catch (error) {
     console.error("register", error);

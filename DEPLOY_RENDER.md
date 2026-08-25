@@ -1,4 +1,4 @@
-# Fluxtok v3 — Render + TiDB
+# Fluxtok v4 — Render + TiDB
 
 ## Web Service
 
@@ -42,3 +42,8 @@ Callback: `https://SEU-SERVICO.onrender.com/api/integrations/tiktok/callback`
 - `FLUXTOK_PRO_PRICE=79.90`
 
 Webhook: `https://SEU-SERVICO.onrender.com/api/webhooks/mercadopago`
+
+
+## V4
+
+A migration V4 adiciona FluxRadar (sem tabela própria), suporte interno, configurações globais e registro de aceites legais. Mantenha o mesmo banco e execute `prisma migrate deploy`.

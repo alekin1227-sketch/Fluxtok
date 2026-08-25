@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { hashToken, randomToken } from "@/lib/security";
 import { SubscriptionStatus, UserRole } from "@prisma/client";
+import { hasCurrentRequiredAcceptances } from "@/lib/legal";
 
 const COOKIE = "fluxtok_session";
 const SESSION_DAYS = 14;
@@ -54,12 +55,19 @@ export function companyHasAccess(company: NonNullable<Awaited<ReturnType<typeof 
   return !legacyEnds || legacyEnds > new Date();
 }
 
-export async function requireCompanyIdentity() {
+export async function requireCompanyIdentityBase() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (user.role === UserRole.SUPERADMIN) redirect("/superadmin");
   if (!user.companyId || !user.company || !user.company.active) redirect("/account-disabled");
   return user as typeof user & { companyId: string; company: NonNullable<typeof user.company> };
+}
+
+export async function requireCompanyIdentity() {
+  const user = await requireCompanyIdentityBase();
+  const accepted = await hasCurrentRequiredAcceptances(user.id);
+  if (!accepted) redirect("/accept-terms");
+  return user;
 }
 
 export async function requireCompanyUser() {

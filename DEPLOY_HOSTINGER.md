@@ -1,4 +1,4 @@
-# Fluxtok v3 — Hostinger + MySQL
+# Fluxtok v4 — Hostinger + MySQL
 
 A aplicação foi preparada para Next.js/Node.js e MySQL sem depender do Render.
 
@@ -69,3 +69,8 @@ Ative os backups disponibilizados no plano da Hostinger. Antes de migrations mai
 ## 7. Migração do CreatorTrack v2
 
 A migration `20260824150000_fluxtok_v3` adiciona as tabelas/colunas da V3 e cria registros de assinatura para empresas antigas. Faça backup antes de apontar a V3 para um banco existente.
+
+
+## V4
+
+A migration V4 adiciona FluxRadar (sem tabela própria), suporte interno, configurações globais e registro de aceites legais. Mantenha o mesmo banco e execute `prisma migrate deploy`.

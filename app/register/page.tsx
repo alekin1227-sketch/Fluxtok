@@ -9,9 +9,9 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
   return <main className="auth-shell auth-shell-brand">
     <section className="auth-card stack auth-card-wide">
       <Brand />
-      <div><div className="eyebrow">7 DIAS GRÁTIS</div><h1 className="auth-title">Crie sua conta</h1><p className="muted">Comece sem cartão. Sua loja recebe um espaço separado e seguro no Fluxtok.</p></div>
+      <div><div className="eyebrow">7 DIAS GRÁTIS · SEM CARTÃO</div><h1 className="auth-title">Crie sua conta</h1><p className="muted">Sua loja recebe um espaço separado e seguro. O teste começa assim que a conta é criada.</p></div>
       {q.error === "duplicate" && <div className="notice notice-error">Este e-mail já possui uma conta.</div>}
-      {q.error === "invalid" && <div className="notice notice-error">Confira os dados. A senha deve ter pelo menos 12 caracteres.</div>}
+      {q.error === "invalid" && <div className="notice notice-error">Confira os dados e confirme todos os itens obrigatórios. A senha deve ter pelo menos 12 caracteres.</div>}
       {q.error === "server" && <div className="notice notice-error">Não foi possível criar sua conta agora. Tente novamente.</div>}
       <form className="stack" action="/api/auth/register" method="post">
         <div className="form-grid compact-grid">
@@ -20,7 +20,11 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
           <div className="field"><label>E-mail *</label><input name="email" type="email" autoComplete="email" placeholder="voce@empresa.com" required /></div>
           <div className="field"><label>Senha *</label><input name="password" type="password" autoComplete="new-password" minLength={12} placeholder="Mínimo 12 caracteres" required /></div>
         </div>
-        <label className="check-row"><input type="checkbox" name="terms" value="yes" required /><span>Concordo com os <a href="/termos" target="_blank">Termos de uso</a> e a <a href="/privacidade" target="_blank">Política de privacidade</a>.</span></label>
+        <div className="legal-consent-box">
+          <label className="check-row"><input type="checkbox" name="terms" value="yes" required /><span>Li e concordo com os <a href="/termos" target="_blank">Termos de uso</a> e a <a href="/privacidade" target="_blank">Política de privacidade</a>.</span></label>
+          <label className="check-row"><input type="checkbox" name="trialConsent" value="yes" required /><span>Entendi que o teste dura 7 dias, não exige cartão e que, ao terminar, o acesso operacional pode ser limitado até a contratação de um plano. Meus dados não são apagados automaticamente.</span></label>
+          <label className="check-row"><input type="checkbox" name="dataConsent" value="yes" required /><span>Confirmo que sou responsável por inserir apenas dados de creators e contatos que posso tratar de forma legítima e compatível com a legislação aplicável.</span></label>
+        </div>
         <button className="btn btn-primary btn-lg" type="submit">Começar meus 7 dias grátis</button>
       </form>
       <div className="auth-foot">Já possui uma conta? <a className="text-link" href="/login">Entrar</a></div>

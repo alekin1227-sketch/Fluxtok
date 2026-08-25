@@ -1,10 +1,10 @@
 {
   "name": "fluxtok",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "node scripts/preflight.mjs && prisma generate && next build",
     "start": "prisma migrate deploy && node scripts/bootstrap.mjs && next start",
     "start:app": "next start",
     "prisma:generate": "prisma generate",
@@ -12,7 +12,8 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "seed": "node scripts/bootstrap.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "preflight": "node scripts/preflight.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

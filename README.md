@@ -1,19 +1,55 @@
-# Fluxtok v3
+# Fluxtok v4 — FluxRadar
 
-SaaS multiempresa para lojas que operam com creators, amostras, campanhas e conteúdos de social commerce.
+SaaS multiempresa para sellers que operam com creators, amostras, campanhas e conteúdos de social commerce.
 
-A V3 mantém o foco da V2 em telas objetivas, mas adiciona a camada comercial do SaaS:
+A V4 é uma atualização **do mesmo repositório e do mesmo banco da V3**. Não exige criar outro projeto no GitHub. A migration `20260825040000_fluxtok_v4` adiciona apenas novas tabelas de suporte, configurações globais e registros legais.
 
-- cadastro público da própria empresa;
-- 7 dias grátis automáticos, sem cartão;
-- assinatura recorrente e cancelamento via Mercado Pago (quando configurado);
-- TikTok Shop oficial por OAuth Seller;
-- sincronização real de produtos pela TikTok Shop Open API;
-- campanhas;
-- equipe com acessos separados;
-- painel Superadmin;
-- páginas-base de Termos de Uso e Privacidade para revisão antes do lançamento;
-- compatível com Render/TiDB e Hostinger/MySQL.
+## Diferencial principal
+
+### FluxRadar
+
+O dashboard não mostra apenas números. Ele monta automaticamente uma lista curta de **próximas ações**, priorizando:
+
+- conteúdo atrasado;
+- prazo próximo;
+- amostra em transporte sem rastreio;
+- operação em dia quando não há urgências.
+
+### FluxScore
+
+Cada creator passa a ter um indicador operacional de 0 a 100 calculado de forma transparente com:
+
+- taxa de publicação;
+- cumprimento de prazo;
+- sinal de vendas registradas.
+
+O FluxScore é um auxílio operacional, não uma promessa de performance e não depende de IA externa.
+
+## Novidades V4
+
+- FluxRadar no dashboard;
+- FluxScore no histórico do creator;
+- onboarding mais simples;
+- central de suporte dentro do SaaS;
+- cliente abre chamado e acompanha respostas;
+- Superadmin responde pelo próprio painel;
+- e-mail público de suporte configurável pelo Superadmin;
+- e-mail de notificações configurável pelo Superadmin;
+- notificações de nova conta, novo chamado e assinatura ativa quando SMTP está configurado;
+- Superadmin com dashboard de empresas, testes, MRR estimado, suporte e TikTok conectado;
+- extensão de trial com +1, +3, +7, +14, +30 ou quantidade personalizada;
+- planos Essencial R$ 49,90 e Pro R$ 79,90;
+- confirmação explícita de cobrança recorrente antes do Mercado Pago;
+- botão de sincronização manual do status do Mercado Pago;
+- registro de aceite dos Termos, Privacidade, regras do teste e responsabilidade por dados;
+- versão do documento, data/hora, user-agent e hash do IP registrados no banco;
+- páginas legais ampliadas para revisão antes do lançamento.
+
+## Fluxo do cliente
+
+`Landing → Criar conta → aceitar termos → 7 dias grátis → onboarding → dashboard → FluxRadar → operação → plano → Mercado Pago`
+
+Ao terminar o teste, os dados permanecem salvos. O acesso operacional é limitado até assinatura ou extensão de trial pelo Superadmin.
 
 ## Stack
 
@@ -23,21 +59,7 @@ A V3 mantém o foco da V2 em telas objetivas, mas adiciona a camada comercial do
 - Node.js 22 LTS
 - Prisma 6
 - MySQL / TiDB compatível com MySQL
-- CSS próprio, sem UI paga
-
-## Fluxo do cliente
-
-`Landing → Criar conta → empresa + admin → 7 dias grátis → onboarding → dashboard → conectar TikTok Shop → escolher plano → Mercado Pago`
-
-Ao acabar o teste, os dados permanecem no banco. O acesso operacional é direcionado para a tela de assinatura.
-
-## Instalação local
-
-1. Copie `.env.example` para `.env`.
-2. Configure `DATABASE_URL`, `SESSION_SECRET` e `TOKEN_ENCRYPTION_KEY`.
-3. Instale as dependências com `npm install`.
-4. Rode `npm run prisma:deploy` em um banco novo ou já migrado.
-5. Rode `npm run dev`.
+- CSS próprio
 
 ## Comandos
 
@@ -49,54 +71,63 @@ npm run typecheck
 npm run prisma:deploy
 ```
 
-O `npm start` executa as migrations pendentes, faz o bootstrap opcional do superadmin e inicia o Next.js.
+`npm start` executa as migrations pendentes, o bootstrap opcional do Superadmin e inicia o Next.js.
 
 ## Segurança
 
-- senha com bcrypt;
-- sessão opaca em cookie HttpOnly/SameSite;
-- `companyId` vem da sessão do backend;
+- bcrypt para senhas;
+- sessão opaca em cookie HttpOnly / SameSite;
+- `companyId` derivado da sessão no backend;
 - validações Zod no servidor;
-- rate limit de login persistido;
+- rate limit persistido no login;
 - redirects centralizados por `APP_URL`;
-- tokens do TikTok criptografados em AES-256-GCM usando `TOKEN_ENCRYPTION_KEY`;
-- webhook do Mercado Pago com validação HMAC quando `MERCADOPAGO_WEBHOOK_SECRET` está definido;
-- secrets somente em variáveis de ambiente.
+- tokens TikTok criptografados em AES-256-GCM;
+- secrets apenas em variáveis de ambiente;
+- assinatura de webhook Mercado Pago quando configurada;
+- registro de aceites legais;
+- histórico de auditoria;
+- suporte isolado por empresa.
 
-Nunca publique `.env`, `TIKTOK_APP_SECRET`, `MERCADOPAGO_ACCESS_TOKEN`, `SESSION_SECRET` ou `TOKEN_ENCRYPTION_KEY`.
+Nunca envie `.env`, `TIKTOK_APP_SECRET`, `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_WEBHOOK_SECRET`, `SESSION_SECRET`, `TOKEN_ENCRYPTION_KEY` ou senha SMTP ao GitHub.
 
-## TikTok Shop
+## Atualizar o mesmo repositório
 
-A integração implementada usa o fluxo oficial Seller OAuth e três partes reais da plataforma:
+Leia `UPGRADE_V4_SAME_REPO.md`.
 
-1. autorização do seller;
-2. obtenção das lojas autorizadas;
-3. busca/sincronização de produtos (`/product/202502/products/search`).
+## Railway + TiDB
 
-Você precisa criar seu app no TikTok Shop Partner Center e conseguir os scopes necessários. Configure como Redirect URL:
-
-`https://SEU-DOMINIO/api/integrations/tiktok/callback`
-
-Veja `SETUP_TIKTOK.md`.
+Leia `DEPLOY_RAILWAY.md`.
 
 ## Mercado Pago
 
-A V3 possui checkout de assinatura recorrente usando `/preapproval`, cancelamento de assinatura e webhook para atualização do status.
+Leia `SETUP_MERCADOPAGO.md`.
 
-Configure o webhook:
+## E-mail e suporte
 
-`https://SEU-DOMINIO/api/webhooks/mercadopago`
+Leia `SETUP_EMAIL_SUPORTE.md`.
 
-Veja `SETUP_MERCADOPAGO.md`.
+## TikTok Shop
 
-## Hospedagem
+A integração da V3 continua disponível. Leia `SETUP_TIKTOK.md`.
 
-- Render: `DEPLOY_RENDER.md`
-- Hostinger: `DEPLOY_HOSTINGER.md`
-- GitHub Desktop: `GITHUB_DESKTOP.md`
+## Jurídico
 
-## Branding
+Leia `LEGAL_LAUNCH_CHECKLIST.md`. Os textos incluídos são uma base de produto e transparência; não substituem revisão jurídica do responsável pelo Fluxtok.
 
-Os arquivos gerados para a identidade Fluxtok ficam em `public/brand/`.
+## Aceite legal versionado
 
-A marca foi criada com linguagem própria e não usa o logo oficial do TikTok. Inclua o aviso de não afiliação na landing e nos termos.
+A V4 também protege o fluxo de atualização: contas criadas antes desta versão e contas criadas manualmente pelo Superadmin são direcionadas para `/accept-terms` até aceitarem a versão atual dos Termos, Privacidade, regras do teste e responsabilidade sobre os dados cadastrados. Quando a versão jurídica for alterada futuramente, basta atualizar `LEGAL_VERSION` para exigir novo aceite.
+
+## Preflight antes de cada deploy
+
+O build agora começa com:
+
+```bash
+npm run preflight
+```
+
+O preflight bloqueia o deploy se encontrar marcador de conflito Git, referência a `localhost:10000`, `.env` real na raiz, secrets óbvios gravados no código ou arquivos essenciais da V4 ausentes. Isso foi adicionado especialmente para impedir a repetição dos conflitos de merge encontrados em versões anteriores.
+
+## Checklist de lançamento
+
+Leia `QA_LAUNCH.md` antes de convidar os primeiros clientes.

@@ -1,16 +1,17 @@
-# Fluxtok v3 — GitHub Desktop
+# Fluxtok v4 — GitHub Desktop (mesmo repositório)
 
-Sem PowerShell:
+Para esta atualização, **não crie outro repositório**.
 
-1. Extraia `Fluxtok-v3.zip`.
-2. Abra GitHub Desktop.
-3. `File → Add local repository`.
-4. Se ainda não for um repositório, escolha `create a repository`.
-5. Nome sugerido: `Fluxtok`.
-6. Faça o primeiro commit: `Fluxtok v3`.
-7. Clique em `Publish repository`.
-8. Marque **Keep this code private**.
+1. Abra a pasta atual do Fluxtok no GitHub Desktop.
+2. Faça `Fetch origin` / `Pull origin` se necessário.
+3. Extraia `Fluxtok-v4-UPDATE-ONLY.zip` em outra pasta.
+4. Copie o conteúdo extraído para dentro da pasta atual do Fluxtok e aceite substituir os arquivos.
+5. Volte ao GitHub Desktop.
+6. Confira que `.env` não aparece nas alterações.
+7. Summary: `Fluxtok v4 - FluxRadar, suporte e superadmin`.
+8. `Commit to main`.
+9. `Push origin`.
 
-Antes de publicar, confirme que `.env` NÃO aparece na lista de arquivos. `.env.example` pode ser enviado normalmente.
+O Railway pode fazer deploy automático após o push.
 
-Para atualizar depois: altere os arquivos → escreva um Summary → `Commit to main` → `Push origin`. Render/Hostinger podem fazer o deploy a partir do GitHub.
+A migration V4 será executada pelo `npm start` antes da aplicação iniciar.

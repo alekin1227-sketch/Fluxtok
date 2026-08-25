@@ -10,5 +10,5 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const company = await prisma.company.findUnique({ where: { id } });
   if (company) await prisma.company.update({ where: { id }, data: { active: !company.active } });
-  return NextResponse.redirect(appUrl("/superadmin?saved=1"), 303);
+  return NextResponse.redirect(appUrl("/superadmin/empresas?saved=1"), 303);
 }
