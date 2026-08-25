@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
         },
         update: {
           status,
+          trialEndsAt: status === "ACTIVE" ? new Date() : undefined,
           provider: "mercadopago",
           externalSubscriptionId: String(subscription.id),
           amount: subscription.auto_recurring?.transaction_amount ? Number(subscription.auto_recurring.transaction_amount) : undefined,

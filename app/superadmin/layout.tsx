@@ -4,7 +4,9 @@ import { Brand } from "@/components/brand";
 const nav = [
   ["/superadmin", "Visão geral", "▦"],
   ["/superadmin/empresas", "Empresas", "▤"],
+  ["/superadmin/pagamentos", "Pagamentos", "R$"],
   ["/superadmin/suporte", "Suporte", "?"],
+  ["/superadmin/auditoria", "Auditoria", "≡"],
   ["/superadmin/configuracoes", "Configurações", "⚙"],
 ];
 

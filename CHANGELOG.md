@@ -76,3 +76,16 @@
 - Expiração automática de acesso pago via Pix.
 - Proteção contra troca para Pix com assinatura recorrente ativa.
 - Termos atualizados para cartão recorrente vs Pix avulso.
+
+## 0.4.5 — Superadmin+ e assinatura sem “trial fantasma”
+- período gratuito deixa de aparecer para empresas com assinatura paga ativa;
+- ao ativar cartão ou Pix, `trialEndsAt` é encerrado imediatamente;
+- Pix pago passa a liberar 30 dias a partir da confirmação, sem somar dias gratuitos restantes;
+- renovação Pix antecipada continua preservando somente período pago ainda válido;
+- Superadmin ganhou área de Pagamentos com MRR de cartão separado de receita Pix;
+- Superadmin ganhou Auditoria com os últimos eventos importantes;
+- visão geral ganhou indicadores de Pix, receita de 30 dias, contas desativadas e alertas operacionais;
+- Empresas ganhou busca e filtros por status, plano e conta desativada;
+- empresas pagas não exibem controles de extensão de teste;
+- backend bloqueia tentativa de adicionar trial a assinatura paga ativa;
+- Configurações do cliente mostra somente informações coerentes com o estado atual: teste OU plano pago.

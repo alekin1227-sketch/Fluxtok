@@ -18,7 +18,7 @@ export default async function PixPaymentPage({ params, searchParams }: { params:
     <section className="billing-head"><div className="eyebrow">PAGAMENTO PIX</div><h1>{approved ? "Pagamento confirmado" : "Conclua seu Pix"}</h1><p>R$ {Number(payment.amount).toFixed(2).replace(".", ",")} · {payment.plan === "PRO" ? "Pro" : "Essencial"}</p></section>
     {q.synced && <Notice>Status consultado diretamente no Mercado Pago.</Notice>}
     {q.error === "sync" && <Notice type="error">Não foi possível consultar o pagamento agora. Tente novamente.</Notice>}
-    {approved ? <section className="pix-card pix-success"><div className="pix-success-icon">✓</div><h2>Pix aprovado</h2><p>Seu acesso foi liberado por 30 dias. Se você ainda tinha dias válidos, eles foram preservados.</p><a className="btn btn-primary btn-lg" href="/dashboard">Ir para o dashboard</a></section> : <section className="pix-card">
+    {approved ? <section className="pix-card pix-success"><div className="pix-success-icon">✓</div><h2>Pix aprovado</h2><p>Seu acesso pago foi liberado por 30 dias a partir da confirmação. Em uma renovação Pix antecipada, apenas dias pagos ainda válidos são preservados.</p><a className="btn btn-primary btn-lg" href="/dashboard">Ir para o dashboard</a></section> : <section className="pix-card">
       {payment.qrCodeBase64 && <img className="pix-qr" src={`data:image/png;base64,${payment.qrCodeBase64}`} alt="QR Code Pix" />}
       {payment.qrCode && <><h2>Pix Copia e Cola</h2><textarea className="pix-code" readOnly rows={5} value={payment.qrCode} /><CopyPixButton value={payment.qrCode} /></>}
       {payment.ticketUrl && <a className="btn btn-soft" target="_blank" rel="noreferrer" href={payment.ticketUrl}>Abrir pagamento no Mercado Pago</a>}

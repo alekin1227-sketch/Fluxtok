@@ -113,11 +113,15 @@ export async function applyMercadoPagoPixPayment(payment: MercadoPagoPayment, ac
     const now = new Date();
     let startFrom = now;
 
-    if (existing?.currentPeriodEnd && existing.currentPeriodEnd > startFrom) {
+    // Renovação antecipada de outro Pix preserva apenas período PAGO já adquirido.
+    // Dias de teste não são somados ao período pago: ao pagar, o teste termina.
+    if (
+      existing?.status === SubscriptionStatus.ACTIVE &&
+      existing.provider === "mercadopago_pix" &&
+      existing.currentPeriodEnd &&
+      existing.currentPeriodEnd > startFrom
+    ) {
       startFrom = existing.currentPeriodEnd;
-    }
-    if (existing?.status === SubscriptionStatus.TRIALING && existing.trialEndsAt > startFrom) {
-      startFrom = existing.trialEndsAt;
     }
 
     const periodEnd = new Date(startFrom.getTime() + 30 * 86400000);
@@ -139,6 +143,7 @@ export async function applyMercadoPagoPixPayment(payment: MercadoPagoPayment, ac
       update: {
         status: SubscriptionStatus.ACTIVE,
         plan: local.plan,
+        trialEndsAt: now,
         currentPeriodEnd: periodEnd,
         amount: local.amount,
         currency: "BRL",
