@@ -309,9 +309,14 @@ model Subscription {
   currentPeriodEnd       DateTime?
   amount                 Decimal?            @db.Decimal(10, 2)
   currency               String              @default("BRL")
-  provider               String?             @default("mercadopago")
-  externalSubscriptionId String?
-  cancelAtPeriodEnd      Boolean             @default(false)
+  provider                      String?             @default("mercadopago")
+  externalSubscriptionId        String?
+  pendingPlan                   BillingPlan?
+  pendingAmount                 Decimal?            @db.Decimal(10, 2)
+  pendingProvider               String?
+  pendingExternalSubscriptionId String?
+  pendingCreatedAt              DateTime?
+  cancelAtPeriodEnd             Boolean             @default(false)
   createdAt              DateTime            @default(now())
   updatedAt              DateTime            @updatedAt
 

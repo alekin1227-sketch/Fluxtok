@@ -1,26 +1,35 @@
 import { BillingPlan, SubscriptionStatus } from "@prisma/client";
 import crypto from "crypto";
 
+function envPrice(name: string, fallback: number) {
+  const raw = process.env[name]?.trim();
+  if (!raw) return fallback;
+  const normalized = raw.replace(",", ".").replace(/[^0-9.-]/g, "");
+  const value = Number(normalized);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
 export const PLAN_INFO: Record<BillingPlan, { name: string; price: number; description: string; features: string[] }> = {
   STARTER: {
     name: "Essencial",
-    price: Number(process.env.FLUXTOK_STARTER_PRICE || "49.90"),
+    price: envPrice("FLUXTOK_STARTER_PRICE", 49.9),
     description: "Para lojas iniciando a operação com creators.",
     features: ["Creators, produtos e amostras", "FluxRadar e FluxScore", "Campanhas e pendências", "TikTok Shop", "Suporte interno", "Até 3 usuários"],
   },
   PRO: {
     name: "Pro",
-    price: Number(process.env.FLUXTOK_PRO_PRICE || "79.90"),
+    price: envPrice("FLUXTOK_PRO_PRICE", 79.9),
     description: "Para operações que precisam de mais equipe e acompanhamento.",
     features: ["Tudo do Essencial", "Usuários adicionais", "Indicadores e auditoria", "Suporte prioritário", "Prioridade em novos recursos"],
   },
 };
 
-export function mapMercadoPagoStatus(status?: string): SubscriptionStatus {
+export function mapMercadoPagoStatus(status?: string): SubscriptionStatus | null {
   if (status === "authorized") return SubscriptionStatus.ACTIVE;
   if (status === "paused") return SubscriptionStatus.PAST_DUE;
   if (status === "cancelled" || status === "canceled") return SubscriptionStatus.CANCELED;
-  return SubscriptionStatus.TRIALING;
+  // pending/unknown nunca deve transformar um plano pago em teste.
+  return null;
 }
 
 export function verifyMercadoPagoSignature(args: { xSignature: string | null; xRequestId: string | null; dataId: string | null }) {

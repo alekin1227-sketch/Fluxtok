@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { hashToken, randomToken } from "@/lib/security";
 import { SubscriptionStatus, UserRole } from "@prisma/client";
 import { hasCurrentRequiredAcceptances } from "@/lib/legal";
+import { repairInterruptedPaidPixUpgrade } from "@/lib/mercadopago-subscription";
 
 const COOKIE = "fluxtok_session";
 const SESSION_DAYS = 14;
@@ -59,10 +60,20 @@ export function companyHasAccess(company: NonNullable<Awaited<ReturnType<typeof 
 }
 
 export async function requireCompanyIdentityBase() {
-  const user = await getCurrentUser();
+  let user = await getCurrentUser();
   if (!user) redirect("/login");
   if (user.role === UserRole.SUPERADMIN) redirect("/superadmin");
   if (!user.companyId || !user.company || !user.company.active) redirect("/account-disabled");
+
+  // Autorreparo do bug legado de troca de plano: se havia Pix pago vigente e
+  // uma tentativa de checkout colocou a assinatura em TRIALING, restaura o
+  // benefício pago antes de liberar a navegação.
+  const repaired = await repairInterruptedPaidPixUpgrade(user.companyId);
+  if (repaired) {
+    user = await getCurrentUser();
+    if (!user || !user.companyId || !user.company || !user.company.active) redirect("/account-disabled");
+  }
+
   return user as typeof user & { companyId: string; company: NonNullable<typeof user.company> };
 }
 

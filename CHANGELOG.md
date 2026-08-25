@@ -1,3 +1,12 @@
+# Fluxtok V4.6
+
+- troca de plano transacional: plano vigente permanece até confirmação do Mercado Pago;
+- estado pendente separado (`pendingPlan`, `pendingExternalSubscriptionId`);
+- correção do retorno indevido para trial ao trocar de plano;
+- proteção contra `NaN` nos preços;
+- autorreparo para o bug legado em acesso Pix pago;
+- Superadmin mostra trocas pendentes.
+
 # Fluxtok v4.4 — E-mail de pagamento independente
 
 - Checkout de cartão permite informar e-mail de pagamento diferente do e-mail de login.

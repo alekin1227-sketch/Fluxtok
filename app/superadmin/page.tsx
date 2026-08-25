@@ -45,6 +45,7 @@ export default async function SuperadminDashboard() {
     pendingPix,
     expiringTrialCompanies,
     recentPix,
+    pendingPlanChanges,
   ] = await Promise.all([
     prisma.company.count(),
     prisma.company.count({ where: { active: false } }),
@@ -60,6 +61,7 @@ export default async function SuperadminDashboard() {
     prisma.pixPayment.count({ where: { status: { in: ["pending", "in_process", "creating"] } } }),
     prisma.company.findMany({ take: 5, where: { subscription: { is: { status: "TRIALING", trialEndsAt: { gt: now, lte: in48h } } } }, orderBy: { subscription: { trialEndsAt: "asc" } }, include: { subscription: true } }),
     prisma.pixPayment.findMany({ take: 5, orderBy: { createdAt: "desc" }, include: { company: true } }),
+    prisma.subscription.count({ where: { pendingExternalSubscriptionId: { not: null } } }),
   ]);
 
   const recurringSubs = activeSubs.filter((s) => s.provider !== "mercadopago_pix");
@@ -76,6 +78,7 @@ export default async function SuperadminDashboard() {
       <AdminMetric label="Cartão recorrente" value={recurringSubs.length} hint={`MRR ${money(mrr)}`} tone="success" />
       <AdminMetric label="Pix ativos" value={activePixSubs.length} hint={`${money(pixRevenue30d)} recebidos em 30 dias`} tone="success" />
       <AdminMetric label="Suporte" value={openTickets} hint="aguardando atenção" tone={openTickets ? "warning" : undefined} />
+      <AdminMetric label="Trocas de plano" value={pendingPlanChanges} hint="aguardando confirmação do pagamento" tone={pendingPlanChanges ? "warning" : undefined} />
       <AdminMetric label="TikTok conectado" value={tiktokConnected} hint={`${pendingPix} Pix pendente(s)`} tone={pendingPix ? "warning" : undefined} />
     </div>
 
