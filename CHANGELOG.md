@@ -98,3 +98,14 @@
 - empresas pagas não exibem controles de extensão de teste;
 - backend bloqueia tentativa de adicionar trial a assinatura paga ativa;
 - Configurações do cliente mostra somente informações coerentes com o estado atual: teste OU plano pago.
+
+## v4.7 — Simple Ops + TikTok Views Ready
+
+- Dashboard simplificado para quatro indicadores principais e FluxRadar como foco.
+- Menu principal reduzido; cadastros e ajustes ficam recolhidos.
+- Produtos agora podem ser editados, desativados ou excluídos quando não possuem histórico.
+- Creators agora podem ser revisados/alterados e removidos quando não possuem histórico; com histórico, são finalizados para preservar relações.
+- Conteúdos agora podem ser revisados, alterados e excluídos; ao apagar o único conteúdo de uma amostra, a amostra volta para aguardando conteúdo.
+- Integração opcional com TikTok Display API preparada sem migration, reutilizando `contents.tiktokContentId` e `contents.views`.
+- Botão para atualizar views do TikTok em lotes de até 20 vídeos.
+- Nenhuma alteração em `prisma/schema.prisma` e nenhuma migration nova.

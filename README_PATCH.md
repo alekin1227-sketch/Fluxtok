@@ -1,23 +1,27 @@
-# Fluxtok v4.4.1 — Build Fix
+# Fluxtok v4.7 — UPDATE ONLY
 
-Correção incremental para o erro TypeScript em `lib/pix.ts`:
+Copie tudo desta pasta para a raiz do Fluxtok v4.6 e aceite substituir arquivos.
 
-`Property 'toISOString' does not exist on type 'never'`.
+Depois faça Commit + Push no mesmo repositório. Railway fará o deploy.
 
-## Como aplicar
+## Banco
 
-1. Extraia este ZIP.
-2. Copie a pasta `lib` para a raiz do repositório Fluxtok atual.
-3. Aceite substituir `lib/pix.ts`.
-4. No GitHub Desktop, faça commit e push.
-5. O Railway fará novo deploy.
+Nenhuma migration nova. `prisma/schema.prisma` não foi alterado.
 
-Sugestão de commit:
+## Novidades
 
-`Fix Pix period end TypeScript build`
+- dashboard e menu mais simples;
+- editar/excluir/desativar produtos;
+- editar/excluir/finalizar creators;
+- revisar/excluir conteúdos;
+- preparação da TikTok Display API para atualizar views usando os campos existentes.
 
-## O que mudou
+## TikTok views (opcional)
 
-O resultado da transação Prisma agora retorna explicitamente `activated` e `periodEnd`, em vez de alterar variáveis externas dentro do callback. Isso permite que o TypeScript reconheça corretamente `periodEnd` como `Date | null`.
+Depois de cadastrar/aprovar a aplicação no TikTok for Developers, configure no Railway:
 
-Nenhuma migration nova. Nenhuma alteração no TiDB. Nenhuma alteração de preço ou credenciais.
+`TIKTOK_DISPLAY_ACCESS_TOKEN=...`
+
+O token deve ter autorização para o scope `video.list`.
+
+Atenção: a Display API retorna vídeos pertencentes à conta que autorizou o token; não consulta métricas de creators arbitrários sem autorização.
