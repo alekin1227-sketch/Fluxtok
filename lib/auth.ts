@@ -47,7 +47,10 @@ export function companyHasAccess(company: NonNullable<Awaited<ReturnType<typeof 
   if (!company || !company.active) return false;
   const sub = company.subscription;
   if (sub) {
-    if (sub.status === SubscriptionStatus.ACTIVE) return true;
+    if (sub.status === SubscriptionStatus.ACTIVE) {
+      if (sub.provider === "mercadopago_pix") return Boolean(sub.currentPeriodEnd && sub.currentPeriodEnd > new Date());
+      return true;
+    }
     if (sub.status === SubscriptionStatus.TRIALING && sub.trialEndsAt > new Date()) return true;
     return false;
   }
@@ -72,6 +75,11 @@ export async function requireCompanyIdentity() {
 
 export async function requireCompanyUser() {
   const user = await requireCompanyIdentity();
+  const sub = user.company.subscription;
+  if (sub?.status === SubscriptionStatus.ACTIVE && sub.provider === "mercadopago_pix" && (!sub.currentPeriodEnd || sub.currentPeriodEnd <= new Date())) {
+    await prisma.subscription.update({ where: { companyId: user.companyId }, data: { status: SubscriptionStatus.EXPIRED } }).catch(() => undefined);
+    redirect("/billing?expired=1");
+  }
   if (!companyHasAccess(user.company)) redirect("/billing?expired=1");
   return user;
 }

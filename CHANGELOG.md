@@ -56,3 +56,12 @@
 
 ## Configuração de e-mail
 - botão de teste de SMTP/e-mail diretamente em Superadmin → Configurações.
+
+## 0.4.3 — Pix Mercado Pago
+- Pix avulso de 30 dias nos planos Essencial e Pro.
+- QR Code, Copia e Cola e verificação manual.
+- Webhook de pagamentos com validação e ativação idempotente.
+- Nova tabela `pix_payments`.
+- Expiração automática de acesso pago via Pix.
+- Proteção contra troca para Pix com assinatura recorrente ativa.
+- Termos atualizados para cartão recorrente vs Pix avulso.

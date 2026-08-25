@@ -109,6 +109,7 @@ model Company {
   auditLogs         AuditLog[]
   supportTickets    SupportTicket[]
   legalAcceptances  LegalAcceptance[]
+  pixPayments       PixPayment[]
 
   @@map("companies")
 }
@@ -132,6 +133,7 @@ model User {
   supportTickets     SupportTicket[]
   supportMessages    SupportMessage[]
   legalAcceptances   LegalAcceptance[]
+  pixPayments        PixPayment[]
 
   @@index([companyId])
   @@index([role])
@@ -318,6 +320,37 @@ model Subscription {
   @@index([status])
   @@index([externalSubscriptionId])
   @@map("subscriptions")
+}
+
+
+model PixPayment {
+  id                String      @id @default(cuid())
+  companyId         String
+  userId            String
+  plan              BillingPlan
+  amount            Decimal     @db.Decimal(10, 2)
+  status            String      @default("creating")
+  externalPaymentId String?     @unique
+  qrCode            String?     @db.Text
+  qrCodeBase64      String?     @db.Text
+  ticketUrl         String?     @db.Text
+  expiresAt         DateTime?
+  approvedAt        DateTime?
+  idempotencyKey    String      @unique
+  consentVersion    String
+  consentIpHash     String?
+  consentUserAgent  String?     @db.Text
+  consentAcceptedAt DateTime    @default(now())
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  company           Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, status])
+  @@index([companyId, createdAt])
+  @@index([userId])
+  @@map("pix_payments")
 }
 
 model TikTokConnection {

@@ -36,6 +36,7 @@ for (const required of [
   'package.json',
   'prisma/schema.prisma',
   'prisma/migrations/20260825040000_fluxtok_v4/migration.sql',
+  'prisma/migrations/20260825170000_fluxtok_v43_pix/migration.sql',
   'lib/app-url.ts',
   'lib/legal.ts',
   'lib/flux-radar.ts',

@@ -4,6 +4,7 @@ import { mapMercadoPagoStatus, verifyMercadoPagoSignature } from "@/lib/billing"
 import { audit } from "@/lib/audit";
 import { getPlatformSettings } from "@/lib/platform-settings";
 import { sendPlatformNotification } from "@/lib/mail";
+import { applyMercadoPagoPixPayment, getMercadoPagoPayment } from "@/lib/pix";
 
 export async function POST(req: NextRequest) {
   const url = new URL(req.url);
@@ -18,11 +19,27 @@ export async function POST(req: NextRequest) {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN?.trim();
   if (!token || !dataId) return NextResponse.json({ ok: true });
 
-  // Este endpoint atualiza assinatura somente para eventos de preapproval.
-  // Eventos de payment/authorized_payment podem ser adicionados depois sem misturar IDs diferentes.
-  if (topic && !topic.includes("subscription_preapproval") && topic !== "preapproval") return NextResponse.json({ ok: true });
-
   try {
+    if (topic === "payment" || topic === "payments") {
+      const payment = await getMercadoPagoPayment(dataId);
+      const result = await applyMercadoPagoPixPayment(payment);
+      if (result.activated && result.companyId) {
+        const platform = await getPlatformSettings();
+        if (platform.notificationEmail) {
+          await sendPlatformNotification({
+            to: platform.notificationEmail,
+            subject: "[Fluxtok] Pix aprovado",
+            text: `Empresa ${result.companyId} teve um pagamento Pix aprovado no Mercado Pago.\nPagamento: ${dataId}`,
+          }).catch((e) => console.error("pix notification", e));
+        }
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    if (topic && !topic.includes("subscription_preapproval") && topic !== "preapproval") {
+      return NextResponse.json({ ok: true });
+    }
+
     const res = await fetch(`https://api.mercadopago.com/preapproval/${encodeURIComponent(dataId)}`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
     const subscription = await res.json();
     if (!res.ok) throw new Error(subscription.message || "Falha ao consultar assinatura");
@@ -41,6 +58,7 @@ export async function POST(req: NextRequest) {
         },
         update: {
           status,
+          provider: "mercadopago",
           externalSubscriptionId: String(subscription.id),
           amount: subscription.auto_recurring?.transaction_amount ? Number(subscription.auto_recurring.transaction_amount) : undefined,
           currentPeriodEnd: subscription.next_payment_date ? new Date(subscription.next_payment_date) : undefined,
