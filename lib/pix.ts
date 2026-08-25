@@ -90,10 +90,7 @@ export async function applyMercadoPagoPixPayment(payment: MercadoPagoPayment, ac
     return { handled: true, activated: false, companyId: local.companyId, localId: local.id };
   }
 
-  let activated = false;
-  let periodEnd: Date | null = null;
-
-  await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     // Claim atômico. Se outro Webhook já aprovou, count será 0 e não soma 30 dias novamente.
     const claimed = await tx.pixPayment.updateMany({
       where: { id: local.id, approvedAt: null },
@@ -108,7 +105,9 @@ export async function applyMercadoPagoPixPayment(payment: MercadoPagoPayment, ac
       },
     });
 
-    if (!claimed.count) return;
+    if (!claimed.count) {
+      return { activated: false, periodEnd: null as Date | null };
+    }
 
     const existing = await tx.subscription.findUnique({ where: { companyId: local.companyId } });
     const now = new Date();
@@ -121,7 +120,7 @@ export async function applyMercadoPagoPixPayment(payment: MercadoPagoPayment, ac
       startFrom = existing.trialEndsAt;
     }
 
-    periodEnd = new Date(startFrom.getTime() + 30 * 86400000);
+    const periodEnd = new Date(startFrom.getTime() + 30 * 86400000);
 
     await tx.subscription.upsert({
       where: { companyId: local.companyId },
@@ -149,8 +148,10 @@ export async function applyMercadoPagoPixPayment(payment: MercadoPagoPayment, ac
       },
     });
 
-    activated = true;
+    return { activated: true, periodEnd };
   });
+
+  const { activated, periodEnd } = result;
 
   if (activated) {
     await audit({
