@@ -12,14 +12,15 @@ import { saveAcceptances } from "@/lib/legal";
 const schema = z.object({
   plan: z.nativeEnum(BillingPlan),
   billingConsent: z.literal("yes"),
+  payerEmail: z.string().trim().email().max(254).optional(),
 });
 
 function mercadoPagoMode() {
   return process.env.MERCADOPAGO_MODE?.trim().toLowerCase() === "test" ? "test" : "production";
 }
 
-function mercadoPagoPayerEmail(realEmail: string) {
-  if (mercadoPagoMode() !== "test") return realEmail;
+function mercadoPagoPayerEmail(requestedEmail: string) {
+  if (mercadoPagoMode() !== "test") return requestedEmail.trim().toLowerCase();
 
   const configured = process.env.MERCADOPAGO_TEST_PAYER_EMAIL?.trim().toLowerCase();
   if (!configured) {
@@ -51,7 +52,8 @@ export async function POST(req: NextRequest) {
   const mode = mercadoPagoMode();
 
   try {
-    const payerEmail = mercadoPagoPayerEmail(user.email);
+    const requestedPayerEmail = parsed.data.payerEmail?.trim().toLowerCase() || user.email.trim().toLowerCase();
+    const payerEmail = mercadoPagoPayerEmail(requestedPayerEmail);
 
     await saveAcceptances({
       tx: prisma,
@@ -122,7 +124,12 @@ export async function POST(req: NextRequest) {
       userId: user.id,
       action: "BILLING_CHECKOUT_CREATED",
       entity: "subscription",
-      metadata: { plan, amount: info.price, mercadoPagoMode: mode },
+      metadata: {
+        plan,
+        amount: info.price,
+        mercadoPagoMode: mode,
+        payerEmailMatchesAccount: payerEmail === user.email.trim().toLowerCase(),
+      },
     });
 
     return NextResponse.redirect(String(json.init_point), 303);

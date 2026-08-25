@@ -1,3 +1,14 @@
+# Fluxtok v4.4 — E-mail de pagamento independente
+
+- Checkout de cartão permite informar e-mail de pagamento diferente do e-mail de login.
+- Pix permite informar e-mail de pagamento diferente do e-mail de login.
+- Se não houver alteração, o e-mail da conta continua como padrão.
+- O e-mail de pagamento não altera autenticação nem cadastro do Fluxtok.
+- Validação de e-mail no backend com Zod.
+- Modo sandbox de Assinaturas continua usando `MERCADOPAGO_TEST_PAYER_EMAIL` para evitar mistura de usuários teste/produção.
+- Termos atualizados para explicar a separação entre e-mail de acesso e e-mail de pagamento.
+- Nenhuma migration de banco é necessária nesta atualização.
+
 # Fluxtok v4
 
 ## Diferencial

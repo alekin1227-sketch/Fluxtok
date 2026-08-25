@@ -18,11 +18,17 @@ const schema = z.object({
     .transform((value) => value.replace(/\D/g, ""))
     .refine((value) => value.length === 11 || value.length === 14, "CPF/CNPJ inválido"),
   pixConsent: z.literal("yes"),
+  payerEmail: z.string().trim().email().max(254).optional(),
 });
 
 function maskDocument(value: string) {
   if (value.length <= 4) return "***";
   return `${value.slice(0, 2)}***${value.slice(-2)}`;
+}
+
+function maskEmail(value: string) {
+  const at = value.lastIndexOf("@");
+  return at >= 0 ? `***@${value.slice(at + 1)}` : "***";
 }
 
 export async function POST(req: NextRequest) {
@@ -37,6 +43,7 @@ export async function POST(req: NextRequest) {
 
   const plan = parsed.data.plan;
   const document = parsed.data.document;
+  const payerEmail = parsed.data.payerEmail?.trim().toLowerCase() || user.email.trim().toLowerCase();
   const info = PLAN_INFO[plan];
 
   const current = await prisma.subscription.findUnique({ where: { companyId: user.companyId } });
@@ -79,7 +86,7 @@ export async function POST(req: NextRequest) {
         external_reference: local.id,
         notification_url: appUrl("/api/webhooks/mercadopago").toString(),
         payer: {
-          email: user.email,
+          email: payerEmail,
           first_name: user.name.split(" ")[0] || user.name,
           identification: {
             type: document.length === 14 ? "CNPJ" : "CPF",
@@ -99,6 +106,7 @@ export async function POST(req: NextRequest) {
       console.error("mercadopago pix create", {
         status: res.status,
         document: maskDocument(document),
+        payer: maskEmail(payerEmail),
         message: payment?.message,
         error: payment?.error,
         cause: payment?.cause,
@@ -132,7 +140,12 @@ export async function POST(req: NextRequest) {
       action: "PIX_PAYMENT_CREATED",
       entity: "pix_payment",
       entityId: local.id,
-      metadata: { plan, amount: info.price, externalPaymentId: String(payment.id) },
+      metadata: {
+        plan,
+        amount: info.price,
+        externalPaymentId: String(payment.id),
+        payerEmailMatchesAccount: payerEmail === user.email.trim().toLowerCase(),
+      },
     });
 
     return NextResponse.redirect(appUrl(`/billing/pix/${local.id}`), 303);

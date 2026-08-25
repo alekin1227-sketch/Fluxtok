@@ -86,3 +86,15 @@ O `npm start` atual do Fluxtok executa `prisma migrate deploy` automaticamente n
 ## 7. Atenção para assinatura de cartão já ativa
 
 O Fluxtok bloqueia a geração de Pix quando a empresa já possui assinatura recorrente ativa no cartão. Isso evita cobrança dupla. Cancele a assinatura recorrente antes de trocar o cliente para Pix.
+
+
+## E-mail de pagamento diferente do login
+
+A V4.4 permite que o cliente informe um e-mail de pagamento diferente do e-mail usado para entrar no Fluxtok. O campo aparece no checkout de Cartão e Pix.
+
+- se o cliente mantiver o e-mail sugerido, o sistema usa o e-mail da conta Fluxtok;
+- se trocar o campo, o Mercado Pago recebe o novo e-mail como e-mail do pagador;
+- o e-mail de login do Fluxtok não é alterado;
+- no modo de teste de Assinaturas, `MERCADOPAGO_TEST_PAYER_EMAIL` continua prevalecendo para manter comprador e vendedor no mesmo ambiente de teste.
+
+Em produção, não existe exigência do Fluxtok de que o e-mail do pagamento seja igual ao e-mail de cadastro. O e-mail informado deve ser válido e usado legitimamente pelo pagador.
