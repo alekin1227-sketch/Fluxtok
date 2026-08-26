@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireSuperadmin } from "@/lib/auth";
-import { PLAN_INFO } from "@/lib/billing";
+import { PLAN_INFO, billingCycleFromProvider, isMercadoPagoCardProvider } from "@/lib/billing";
 import { supportStatusLabel, supportTone } from "@/lib/support";
 
 function money(value: number) {
@@ -64,9 +64,13 @@ export default async function SuperadminDashboard() {
     prisma.subscription.count({ where: { pendingExternalSubscriptionId: { not: null } } }),
   ]);
 
-  const recurringSubs = activeSubs.filter((s) => s.provider !== "mercadopago_pix");
+  const recurringSubs = activeSubs.filter((s) => isMercadoPagoCardProvider(s.provider));
+  const annualSubs = recurringSubs.filter((s) => billingCycleFromProvider(s.provider) === "ANNUAL");
   const activePixSubs = activeSubs.filter((s) => s.provider === "mercadopago_pix" && s.currentPeriodEnd && s.currentPeriodEnd > now);
-  const mrr = recurringSubs.reduce((sum, s) => sum + Number(s.amount ?? PLAN_INFO[s.plan].price), 0);
+  const mrr = recurringSubs.reduce((sum, s) => {
+    const chargedAmount = Number(s.amount ?? PLAN_INFO[s.plan].price);
+    return sum + (billingCycleFromProvider(s.provider) === "ANNUAL" ? chargedAmount / 12 : chargedAmount);
+  }, 0);
   const pixRevenue30d = Number(pix30d._sum.amount ?? 0);
 
   return <>
@@ -75,7 +79,7 @@ export default async function SuperadminDashboard() {
     <div className="admin-metric-grid admin-metric-grid-wide">
       <AdminMetric label="Empresas" value={companies} hint={`${signups7d} novas em 7 dias · ${disabledCompanies} desativadas`} />
       <AdminMetric label="Testes ativos" value={activeTrials} hint={`${expiringTrials} vencem em até 48h`} tone={expiringTrials ? "warning" : undefined} />
-      <AdminMetric label="Cartão recorrente" value={recurringSubs.length} hint={`MRR ${money(mrr)}`} tone="success" />
+      <AdminMetric label="Cartão recorrente" value={recurringSubs.length} hint={`MRR normalizado ${money(mrr)} · ${annualSubs.length} anual(is)`} tone="success" />
       <AdminMetric label="Pix ativos" value={activePixSubs.length} hint={`${money(pixRevenue30d)} recebidos em 30 dias`} tone="success" />
       <AdminMetric label="Suporte" value={openTickets} hint="aguardando atenção" tone={openTickets ? "warning" : undefined} />
       <AdminMetric label="Trocas de plano" value={pendingPlanChanges} hint="aguardando confirmação do pagamento" tone={pendingPlanChanges ? "warning" : undefined} />

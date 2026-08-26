@@ -1,3 +1,16 @@
+# V4.8 — Annual + Gmail + Security
+
+- assinatura mensal e anual no Mercado Pago;
+- desconto anual configurável;
+- troca de periodicidade sem perder o plano atual antes da aprovação;
+- MRR do Superadmin normalizado para assinaturas anuais;
+- Gmail/SMTP para redefinição de senha;
+- e-mail de confirmação após troca de senha;
+- rate limit no forgot-password;
+- reset token de uso único reforçado;
+- novos headers de segurança;
+- nenhuma migration nova.
+
 # Fluxtok V4.6
 
 - troca de plano transacional: plano vigente permanece até confirmação do Mercado Pago;

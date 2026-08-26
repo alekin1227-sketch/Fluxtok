@@ -28,3 +28,38 @@ export async function recordLoginFailure(key: string) {
 export async function clearLoginFailures(key: string) {
   await prisma.loginRateLimit.deleteMany({ where: { key } });
 }
+
+export async function consumeActionRateLimit(
+  key: string,
+  options: { maxAttempts?: number; windowMs?: number; blockMs?: number } = {},
+) {
+  const now = new Date();
+  const maxAttempts = options.maxAttempts ?? 4;
+  const windowMs = options.windowMs ?? 15 * 60 * 1000;
+  const blockMs = options.blockMs ?? 15 * 60 * 1000;
+  const safeKey = key.slice(0, 190);
+
+  const existing = await prisma.loginRateLimit.findUnique({ where: { key: safeKey } });
+  if (existing?.blockedUntil && existing.blockedUntil > now) throw new Error("RATE_LIMITED");
+
+  if (existing && now.getTime() - existing.windowStart.getTime() > windowMs) {
+    await prisma.loginRateLimit.update({
+      where: { key: safeKey },
+      data: { attempts: 1, windowStart: now, blockedUntil: null },
+    });
+    return;
+  }
+
+  const row = await prisma.loginRateLimit.upsert({
+    where: { key: safeKey },
+    create: { key: safeKey, attempts: 1, windowStart: now },
+    update: { attempts: { increment: 1 } },
+  });
+
+  if (row.attempts >= maxAttempts) {
+    await prisma.loginRateLimit.update({
+      where: { key: safeKey },
+      data: { blockedUntil: new Date(now.getTime() + blockMs) },
+    });
+  }
+}

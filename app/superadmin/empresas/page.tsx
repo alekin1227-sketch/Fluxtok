@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireSuperadmin } from "@/lib/auth";
 import { Notice } from "@/components/notice";
-import { PLAN_INFO } from "@/lib/billing";
+import { PLAN_INFO, billingCycleFromProvider, billingCycleLabel, isMercadoPagoCardProvider } from "@/lib/billing";
 
 const allowedStatuses = new Set(["TRIALING", "ACTIVE", "PAST_DUE", "CANCELED", "EXPIRED"]);
 const allowedPlans = new Set(["STARTER", "PRO"]);
@@ -24,7 +24,7 @@ function statusTone(status?: string | null) {
 
 function paymentMethod(provider?: string | null) {
   if (provider === "mercadopago_pix") return "Pix";
-  if (provider === "mercadopago") return "Cartão";
+  if (isMercadoPagoCardProvider(provider)) return `Cartão ${billingCycleLabel(billingCycleFromProvider(provider)).toLowerCase()}`;
   return "—";
 }
 
@@ -96,7 +96,7 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Pr
 
         {!isPaid && <div className="trial-extension"><strong>{isTrial ? "Adicionar dias de teste" : "Conceder período de teste"}</strong><p className="mini-help">Ao conceder dias, a conta volta para status de teste. Planos pagos ativos não recebem essa opção.</p><form action={`/api/superadmin/companies/${c.id}/trial`} method="post"><input name="days" type="number" min="1" max="365" defaultValue="7" required/><button className="btn btn-mini">Adicionar dias</button></form><div className="trial-shortcuts">{[1,3,7,14,30].map((days)=><form key={days} action={`/api/superadmin/companies/${c.id}/trial`} method="post"><input type="hidden" name="days" value={days}/><button className="btn btn-ghost btn-mini">+{days}d</button></form>)}</div></div>}
 
-        {isPaid && <div className="paid-admin-strip"><div><strong>Plano pago ativo</strong><span>{sub?.provider === "mercadopago_pix" ? "Pix avulso" : "Cartão recorrente"}</span></div><a className="btn btn-soft btn-mini" href={`/superadmin/pagamentos?q=${encodeURIComponent(c.name)}`}>Ver cobrança</a></div>}
+        {isPaid && <div className="paid-admin-strip"><div><strong>Plano pago ativo</strong><span>{sub?.provider === "mercadopago_pix" ? "Pix avulso" : paymentMethod(sub?.provider)}</span></div><a className="btn btn-soft btn-mini" href={`/superadmin/pagamentos?q=${encodeURIComponent(c.name)}`}>Ver cobrança</a></div>}
         <div className="company-admin-actions"><form action={`/api/superadmin/companies/${c.id}/toggle`} method="post"><button className={`btn btn-mini ${c.active ? "btn-danger-soft" : "btn-soft"}`}>{c.active ? "Desativar conta" : "Reativar conta"}</button></form></div>
       </article>;
     })}</div></section>

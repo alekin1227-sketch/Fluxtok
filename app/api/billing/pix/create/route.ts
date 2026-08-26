@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { BillingPlan, SubscriptionStatus } from "@prisma/client";
 import { z } from "zod";
 import { requireCompanyAdminIdentity } from "@/lib/auth";
-import { PLAN_INFO } from "@/lib/billing";
+import { isMercadoPagoCardProvider, PLAN_INFO } from "@/lib/billing";
 import { assertSameOrigin } from "@/lib/csrf";
 import { appUrl } from "@/lib/app-url";
 import { prisma } from "@/lib/prisma";
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   const current = await prisma.subscription.findUnique({ where: { companyId: user.companyId } });
   if (
     current?.status === SubscriptionStatus.ACTIVE &&
-    current.provider === "mercadopago" &&
+    isMercadoPagoCardProvider(current.provider) &&
     current.externalSubscriptionId
   ) {
     return NextResponse.redirect(appUrl("/billing?error=pix-active-card"), 303);

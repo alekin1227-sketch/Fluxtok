@@ -148,3 +148,21 @@ Referência oficial de gerenciamento:
 ## 10. “Licença” / autorização para usar o Mercado Pago
 
 Não existe uma chave de licença do Fluxtok para o Mercado Pago. Você precisa ter uma conta Mercado Pago elegível, criar a aplicação em **Suas integrações**, aceitar os termos aplicáveis e ativar as credenciais de produção. Tarifas e condições comerciais do Mercado Pago são definidas pelo próprio provedor e podem mudar.
+
+## V4.8 — cobrança anual
+
+A tela de cobrança agora envia ao endpoint `/preapproval`:
+
+- mensal: `frequency: 1`, `frequency_type: months`;
+- anual: `frequency: 12`, `frequency_type: months`.
+
+O valor anual é cobrado integralmente a cada 12 meses. O plano vigente só é trocado após o Mercado Pago confirmar `authorized`.
+
+Variáveis:
+
+```env
+FLUXTOK_ANNUAL_DISCOUNT_PERCENT=10
+# Opcional, para preço anual fixo:
+# FLUXTOK_STARTER_ANNUAL_PRICE=538.92
+# FLUXTOK_PRO_ANNUAL_PRICE=862.92
+```

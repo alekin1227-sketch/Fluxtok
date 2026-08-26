@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { BillingPlan, LegalDocument, SubscriptionStatus } from "@prisma/client";
 import { z } from "zod";
 import { requireCompanyAdminIdentity } from "@/lib/auth";
-import { PLAN_INFO } from "@/lib/billing";
+import { billingOffer, PLAN_INFO } from "@/lib/billing";
 import { assertSameOrigin } from "@/lib/csrf";
 import { appUrl } from "@/lib/app-url";
 import { prisma } from "@/lib/prisma";
@@ -12,6 +12,7 @@ import { cancelMercadoPagoPreapproval } from "@/lib/mercadopago-subscription";
 
 const schema = z.object({
   plan: z.nativeEnum(BillingPlan),
+  billingCycle: z.enum(["MONTHLY", "ANNUAL"]),
   billingConsent: z.literal("yes"),
   payerEmail: z.string().trim().email().max(254).optional(),
 });
@@ -25,7 +26,7 @@ function mercadoPagoPayerEmail(requestedEmail: string) {
   const configured = process.env.MERCADOPAGO_TEST_PAYER_EMAIL?.trim().toLowerCase();
   if (!configured) {
     throw new Error(
-      "MERCADOPAGO_TEST_PAYER_EMAIL ausente. Em teste de Assinaturas, use o e-mail EXATO da conta Comprador de teste do mesmo país/site do Vendedor de teste."
+      "MERCADOPAGO_TEST_PAYER_EMAIL ausente. Em teste de Assinaturas, use o e-mail EXATO da conta Comprador de teste do mesmo país/site do Vendedor de teste.",
     );
   }
   return configured;
@@ -48,6 +49,7 @@ export async function POST(req: NextRequest) {
 
   const plan = parsed.data.plan;
   const info = PLAN_INFO[plan];
+  const offer = billingOffer(plan, parsed.data.billingCycle);
   const mode = mercadoPagoMode();
 
   try {
@@ -78,13 +80,13 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        reason: `Fluxtok ${info.name}`,
+        reason: `Fluxtok ${info.name} - ${offer.label}`,
         external_reference: user.companyId,
         payer_email: payerEmail,
         auto_recurring: {
-          frequency: 1,
-          frequency_type: "months",
-          transaction_amount: info.price,
+          frequency: offer.frequency,
+          frequency_type: offer.frequencyType,
+          transaction_amount: offer.amount,
           currency_id: "BRL",
         },
         back_url: appUrl("/billing?return=1").toString(),
@@ -98,6 +100,7 @@ export async function POST(req: NextRequest) {
         mode,
         status: res.status,
         payer: emailDomain(payerEmail),
+        billingCycle: offer.cycle,
         message: json?.message,
         error: json?.error,
         cause: json?.cause,
@@ -115,15 +118,15 @@ export async function POST(req: NextRequest) {
         plan: BillingPlan.STARTER,
         trialEndsAt: new Date(),
         pendingPlan: plan,
-        pendingAmount: info.price,
-        pendingProvider: "mercadopago",
+        pendingAmount: offer.amount,
+        pendingProvider: offer.provider,
         pendingExternalSubscriptionId: String(json.id),
         pendingCreatedAt: new Date(),
       },
       update: {
         pendingPlan: plan,
-        pendingAmount: info.price,
-        pendingProvider: "mercadopago",
+        pendingAmount: offer.amount,
+        pendingProvider: offer.provider,
         pendingExternalSubscriptionId: String(json.id),
         pendingCreatedAt: new Date(),
       },
@@ -136,8 +139,10 @@ export async function POST(req: NextRequest) {
       entity: "subscription",
       metadata: {
         currentPlan: current?.plan || null,
+        currentProvider: current?.provider || null,
         targetPlan: plan,
-        amount: info.price,
+        billingCycle: offer.cycle,
+        amount: offer.amount,
         mercadoPagoMode: mode,
         payerEmailMatchesAccount: payerEmail === user.email.trim().toLowerCase(),
       },

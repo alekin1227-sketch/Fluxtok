@@ -22,6 +22,7 @@ export async function createSession(userId: string) {
     secure: process.env.NODE_ENV === "production",
     path: "/",
     expires: expiresAt,
+    priority: "high",
   });
 }
 
@@ -29,7 +30,7 @@ export async function destroySession() {
   const store = await cookies();
   const token = store.get(COOKIE)?.value;
   if (token) await prisma.session.deleteMany({ where: { tokenHash: hashToken(token) } });
-  store.set(COOKIE, "", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", expires: new Date(0) });
+  store.set(COOKIE, "", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", expires: new Date(0), priority: "high" });
 }
 
 export async function getCurrentUser() {

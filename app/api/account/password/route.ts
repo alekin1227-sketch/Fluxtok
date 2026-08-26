@@ -5,6 +5,7 @@ import { requireCompanyUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { assertSameOrigin } from "@/lib/csrf";
 import { appUrl } from "@/lib/app-url";
+import { sendPasswordChanged } from "@/lib/mail";
 
 const schema = z.object({ currentPassword: z.string().min(1), newPassword: z.string().min(12).max(200) });
 
@@ -24,5 +25,8 @@ export async function POST(req: NextRequest) {
     prisma.user.update({ where: { id: user.id }, data: { passwordHash } }),
     prisma.session.deleteMany({ where: { userId: user.id } }),
   ]);
+  await sendPasswordChanged(user.email).catch((error) => {
+    console.error("password changed email delivery failed", error instanceof Error ? error.message : "unknown");
+  });
   return NextResponse.redirect(appUrl("/login?reset=ok"), 303);
 }

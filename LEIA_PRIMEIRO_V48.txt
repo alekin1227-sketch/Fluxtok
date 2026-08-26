@@ -1,0 +1,30 @@
+FLUXTOK V4.8 — ANUAL + GMAIL + SEGURANÇA
+
+1) Copie TODO o conteúdo desta pasta para a raiz do seu projeto Fluxtok atual.
+2) Aceite substituir os arquivos existentes.
+3) GitHub Desktop: Commit to main -> Push origin.
+4) Railway fará o deploy.
+
+NÃO HÁ MIGRATION NOVA NESTA VERSÃO.
+O banco TiDB atual continua igual.
+
+Novas Variables recomendadas:
+
+FLUXTOK_ANNUAL_DISCOUNT_PERCENT=10
+# opcionais para preço anual fixo:
+# FLUXTOK_STARTER_ANNUAL_PRICE=538.92
+# FLUXTOK_PRO_ANNUAL_PRICE=862.92
+
+Gmail SMTP:
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=seuemail@gmail.com
+SMTP_PASS=SENHA_DE_APP_DO_GOOGLE
+SMTP_FROM="Fluxtok <seuemail@gmail.com>"
+
+IMPORTANTE:
+- Não use a senha normal do Gmail em SMTP_PASS.
+- Ative 2FA no Gmail e crie uma Senha de app.
+- Nunca envie secrets para GitHub.
+- Confira SETUP_GMAIL_PASSWORD_RESET.md.

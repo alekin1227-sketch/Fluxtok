@@ -1,14 +1,14 @@
 import { BillingPlan, SubscriptionStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { audit } from "@/lib/audit";
-import { mapMercadoPagoStatus } from "@/lib/billing";
+import { isMercadoPagoCardProvider, mapMercadoPagoStatus } from "@/lib/billing";
 
 export type MercadoPagoPreapproval = {
   id?: string | number;
   status?: string;
   external_reference?: string | null;
   next_payment_date?: string | null;
-  auto_recurring?: { transaction_amount?: number | null };
+  auto_recurring?: { transaction_amount?: number | null; frequency?: number | null; frequency_type?: string | null };
   message?: string;
 };
 
@@ -75,12 +75,14 @@ export async function applyMercadoPagoPreapproval(args: {
       // Se já havia cartão recorrente, cancele o antigo somente DEPOIS que o novo foi autorizado.
       if (
         local.status === SubscriptionStatus.ACTIVE &&
-        local.provider === "mercadopago" &&
+        isMercadoPagoCardProvider(local.provider) &&
         local.externalSubscriptionId &&
         local.externalSubscriptionId !== remoteId
       ) {
         await cancelMercadoPagoPreapproval(local.externalSubscriptionId);
       }
+
+      const targetProvider = local.pendingProvider || "mercadopago";
 
       await prisma.subscription.update({
         where: { companyId: args.companyId },
@@ -88,7 +90,7 @@ export async function applyMercadoPagoPreapproval(args: {
           status: SubscriptionStatus.ACTIVE,
           plan: targetPlan,
           amount: Number.isFinite(targetAmount) && targetAmount > 0 ? targetAmount : undefined,
-          provider: "mercadopago",
+          provider: targetProvider,
           externalSubscriptionId: remoteId,
           currentPeriodEnd: nextPaymentDate,
           trialEndsAt: new Date(),
@@ -107,7 +109,7 @@ export async function applyMercadoPagoPreapproval(args: {
         action: "PLAN_CHANGE_ACTIVATED",
         entity: "subscription",
         entityId: remoteId,
-        metadata: { plan: targetPlan, amount: targetAmount },
+        metadata: { plan: targetPlan, amount: targetAmount, provider: targetProvider },
       });
 
       return { handled: true, changed: true, activated: true, plan: targetPlan };

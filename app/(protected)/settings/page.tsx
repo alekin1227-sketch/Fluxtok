@@ -1,7 +1,7 @@
 import { requireCompanyUser } from "@/lib/auth";
 import { getCompanySettings } from "@/lib/tenant";
 import { Notice } from "@/components/notice";
-import { PLAN_INFO } from "@/lib/billing";
+import { PLAN_INFO, billingCycleFromProvider, billingCycleLabel, isMercadoPagoCardProvider } from "@/lib/billing";
 
 export default async function Settings({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const user = await requireCompanyUser();
@@ -11,6 +11,8 @@ export default async function Settings({ searchParams }: { searchParams: Promise
   const isTrial = sub?.status === "TRIALING";
   const isActive = sub?.status === "ACTIVE";
   const isPix = sub?.provider === "mercadopago_pix";
+  const isCard = isMercadoPagoCardProvider(sub?.provider);
+  const cardCycle = isCard ? billingCycleFromProvider(sub?.provider) : null;
 
   return <>
     <div className="page-head"><div><div className="eyebrow">PREFERÊNCIAS</div><h1 className="page-title">Configurações</h1><p className="page-subtitle">Prazos, conta, integrações e plano em um lugar simples.</p></div></div>
@@ -18,7 +20,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
     <div className="settings-grid">
       <section className="form-card"><div className="form-card-head"><div><h2>Prazos e alertas</h2><p>Usados em novas amostras e na tela de pendências.</p></div></div><form className="stack" action="/api/settings" method="post"><Field name="defaultContentDays" label="Prazo padrão para publicar" value={s.defaultContentDays} suffix="dias" min={1}/><Field name="warningDaysBeforeDue" label="Alertar antes do vencimento" value={s.warningDaysBeforeDue} suffix="dias" min={0}/><Field name="inactiveCreatorDays" label="Creator inativo após" value={s.inactiveCreatorDays} suffix="dias" min={1}/><div className="form-actions"><button className="btn btn-primary">Salvar</button></div></form></section>
       <section className="form-card"><div className="form-card-head"><div><h2>Conta</h2><p>Use pelo menos 12 caracteres na senha.</p></div></div>{q.password==="wrong"&&<Notice type="error">Senha atual incorreta.</Notice>}{q.password==="invalid"&&<Notice type="error">A nova senha é muito curta.</Notice>}<form className="stack" action="/api/account/password" method="post"><div className="field"><label>Senha atual</label><input name="currentPassword" type="password" required/></div><div className="field"><label>Nova senha</label><input name="newPassword" type="password" minLength={12} required/></div><div className="form-actions"><button className="btn btn-primary">Alterar senha</button></div></form></section>
-      <section className="form-card"><div className="form-card-head"><div><h2>Plano</h2><p>{isTrial ? "Seu período de avaliação." : isActive ? "Seu plano pago está ativo." : "Assinatura e cobrança."}</p></div></div><div className="info-list"><span><b>Status</b>{sub?.status||"Legado"}</span><span><b>Plano</b>{sub ? PLAN_INFO[sub.plan].name : "—"}</span>{isTrial && <span><b>Teste até</b>{sub.trialEndsAt.toLocaleDateString("pt-BR")}</span>}{isActive && isPix && sub.currentPeriodEnd && <span><b>Acesso pago até</b>{sub.currentPeriodEnd.toLocaleDateString("pt-BR")}</span>}{isActive && !isPix && <span><b>Cobrança</b>{sub.currentPeriodEnd ? `Próxima em ${sub.currentPeriodEnd.toLocaleDateString("pt-BR")}` : "Recorrente ativa"}</span>}</div><a className="btn btn-soft" href="/billing">Gerenciar plano</a></section>
+      <section className="form-card"><div className="form-card-head"><div><h2>Plano</h2><p>{isTrial ? "Seu período de avaliação." : isActive ? "Seu plano pago está ativo." : "Assinatura e cobrança."}</p></div></div><div className="info-list"><span><b>Status</b>{sub?.status||"Legado"}</span><span><b>Plano</b>{sub ? PLAN_INFO[sub.plan].name : "—"}</span>{isTrial && <span><b>Teste até</b>{sub.trialEndsAt.toLocaleDateString("pt-BR")}</span>}{isActive && isPix && sub.currentPeriodEnd && <span><b>Acesso pago até</b>{sub.currentPeriodEnd.toLocaleDateString("pt-BR")}</span>}{isActive && !isPix && <span><b>Cobrança</b>{cardCycle ? `${billingCycleLabel(cardCycle)}${sub.currentPeriodEnd ? ` · próxima em ${sub.currentPeriodEnd.toLocaleDateString("pt-BR")}` : " · recorrente ativa"}` : sub.currentPeriodEnd ? `Próxima em ${sub.currentPeriodEnd.toLocaleDateString("pt-BR")}` : "Recorrente ativa"}</span>}</div><a className="btn btn-soft" href="/billing">Gerenciar plano</a></section>
       <section className="form-card"><div className="form-card-head"><div><h2>Integrações e equipe</h2><p>Acesse as configurações que não precisam ficar misturadas aqui.</p></div></div><div className="feature-list compact"><a href="/integrations/tiktok"><b>TikTok Shop →</b><span>Conectar loja e sincronizar produtos</span></a><a href="/team"><b>Equipe →</b><span>Gerenciar acessos individuais</span></a></div></section>
     </div>
   </>;
